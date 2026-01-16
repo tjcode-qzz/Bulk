@@ -20,3 +20,24 @@
 ###先将bam文件转成fastq格式文件
 samtools fastq -@ 8 20250922-NPL2507669-P6-PBG67529-sup.pass.bam > 20250922-NPL2507669-P6-PBG67529-sup.pass.fastq
 samtools fastq -@ 8 20250922-NPL2507670-P6-PBG67581-sup.pass.bam > 20250922-NPL2507670-P6-PBG67581-sup.pass.fastq
+# 2. 使用 minimap2 比对
+# 注意！！！关键参数选择！！！
+# 如果是 RNA/cDNA (转录组): 使用 -ax splice
+# 如果是 DNA (全基因组): 使用 -ax map-ont
+echo "Step 2: Mapping with minimap2..."
+
+minimap2 -ax splice -t 32 \
+    -G 12k \
+    ${REF_GENOME} \
+    ${SAMPLE_NAME}.fastq > ${SAMPLE_NAME}.sam
+
+# 参数解释:
+# -ax splice : 专门用于长读长 cDNA/RNA 序列，允许跨越内含子 (Splicing aware)
+# -G 12k     : 猪/小鼠的最大内含子长度通常设为 12k 或 20k，根据物种调整，默认也行
+minimap2 -ax splice -t 32     -G 12k     mhaESC_v1.1_with_mT2T-Y_v1.0.250617.fasta     20250922-NPL2507670-P6-PBG67581-sup.pass.fastq 
+> 20250922-NPL2507670-P6-PBG67581-sup.pass.sam
+
+minimap2 -ax splice -t 32 \
+    -G 12k \
+    mhaESC_v1.1_with_mT2T-Y_v1.0.250617.fasta \
+    20250922-NPL2507669-P6-PBG67529-sup.pass.fastq > 20250922-NPL2507669-P6-PBG67529-sup.pass.sam

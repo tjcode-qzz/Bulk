@@ -1,0 +1,22 @@
+目前是三代测序产生的数据
+测序平台： Nanopore (纳米孔测序) 数据。
+
+证据： sup 代表使用 Super High Accuracy (超高精度) 模型进行的 Basecalling；pass 代表这些 Reads 的质量已经通过了质控阈值（Q-score > 10 或更高）。这是 Nanopore 测序的标准命名格式。
+
+数据质量： 非常好。sup 模型是目前 Nanopore 精度最高的模式，适合做精细的变异检测或转录本分析。
+
+文件大小： 72GB 的 BAM 文件非常大。这说明测序深度很深，或者这是一个包含大量数据的全基因组/全转录组文件。
+需要确认的问题是：
+来确定minimap2：
+
+情况 A (RNA/cDNA)： 如果你是为了看基因表达、Isoform（异构体）、融合基因（结合你之前问的 ZGA 和 4-cell/8-cell 表达差异），这通常是全长转录组。
+
+参数用：-ax splice
+
+情况 B (DNA/WGS)： 如果你是为了看结构变异、插入缺失、基因组完整性（特别是 SCNT 胚胎常查的染色体异常）。
+
+参数用：-ax map-ont
+分析流程：
+###先将bam文件转成fastq格式文件
+samtools fastq -@ 8 20250922-NPL2507669-P6-PBG67529-sup.pass.bam > 20250922-NPL2507669-P6-PBG67529-sup.pass.fastq
+samtools fastq -@ 8 20250922-NPL2507670-P6-PBG67581-sup.pass.bam > 20250922-NPL2507670-P6-PBG67581-sup.pass.fastq

@@ -1,0 +1,72 @@
+library(rlang)
+library(DESeq2)
+setwd("C:\\Users\\WXLiu\\Desktop\\转录组分析\\差异分析\\SDSC_PGCLC")
+mycounts<-read.csv("两组.csv")
+head(mycounts)
+rownames(mycounts)<-mycounts[,1]
+mycounts<-mycounts[,-1]
+condition <- factor(c(rep("P2",3),rep("PGCLC",3)), levels = c("P2","PGCLC"))
+colData <- data.frame(row.names=colnames(mycounts), condition)
+dds <- DESeqDataSetFromMatrix(mycounts, colData, design= ~ condition)
+dds <- DESeq(dds)
+dds
+res = results(dds, contrast=c("condition", "P2", "PGCLC"))
+res= results(dds)
+res = res[order(res$pvalue),]
+head(res)
+
+write.csv(res,file="res.csv")
+
+###火山图
+library(ggpubr)
+library(ggthemes)   ##加载副包
+data=read.csv("res.csv")
+head(data)
+data$logP <- -1*log10(data$pvalue)
+ggscatter(data, x = "log2FoldChange" , y = "logP") + theme_base()
+ggscatter(data, x = "log2FoldChange" , y = "logP", color = "state", 
+          palette = c("#076baf","#DCDCDC","#b7282c")) +
+  theme_base()+
+  geom_hline(yintercept = -1*log10(0.05), linetype = "dashed") +
+  geom_vline(xintercept = c(-1,1), linetype = "dashed")
+
+
+###功能分析
+x=read.csv("差异基因.csv")
+library(clusterProfiler)
+library(KEGG.db)
+library(org.Ss.eg.db)
+
+
+eg = bitr(x$x, fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Ss.eg.db")
+
+
+go_enrich <- enrichGO(gene = eg$ENTREZID,
+                      OrgDb = 'org.Ss.eg.db', 
+                      readable = T,
+                      ont = "BP",
+                      pvalueCutoff = 0.05, 
+                      qvalueCutoff = 0.1)
+
+write.csv(go_enrich, file = "差异基因-GO.csv")
+
+write.csv(eg, file = "差异基因-eg.csv")
+                    
+
+kegg_enrich <- enrichKEGG(gene = eg$ENTREZID,
+                          organism = 'pig',
+                          pvalueCutoff = 0.5, 
+                          qvalueCutoff = 0.5)
+write.csv(kegg_enrich, file = "差异基因-KEGG.csv")
+
+####GO绘图
+library(ggplot2)
+
+pathway = read.csv("差异基因-GO-筛选.csv",header=TRUE,check.names = FALSE)
+pathway$Description<-factor(pathway$Description,levels = rev(pathway$Description))
+
+###最终用图
+
+ggplot(pathway,aes(LOG10,Description))+
+  geom_bar(stat="identity")+
+  theme_bw()  

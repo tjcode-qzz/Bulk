@@ -1,0 +1,28 @@
+#激活环境
+conda activate sra
+nano download.sh
+
+
+#!/bin/bash
+
+# 设置变量
+ID="SRR10357188"
+THREADS=8  # 设置线程数，你的服务器性能强，可以设置大一点，例如 8 或 16
+
+echo "========== 1. 开始下载 $ID =========="
+# prefetch: 从 NCBI 下载 SRA 文件
+prefetch $ID
+
+echo "========== 2. 开始拆分为 FASTQ =========="
+# fasterq-dump: 比旧版 fastq-dump 快很多
+# --split-3: 智能拆分，如果是双端测序会生成 _1.fastq 和 _2.fastq
+# -e: 指定使用的线程数
+# -p: 显示进度条
+fasterq-dump --split-3 $ID -e $THREADS -p
+
+echo "========== 3. 开始压缩文件 =========="
+# gzip: 压缩生成的 .fastq 文件，节省空间
+# 压缩后文件名为 SRR10357188_1.fastq.gz 等
+gzip ${ID}*.fastq
+
+echo "========== 任务全部完成！ =========="
